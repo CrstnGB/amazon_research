@@ -7,31 +7,73 @@ import time
 # Inicializar el controlador de Chrome
 driver = webdriver.Chrome()
 
+def aceptar_cookies():
+    try:
+        boton_aceptar_cookies = wait.until(EC.presence_of_element_located((By.ID, 'sp-cc-accept')))
+        boton_aceptar_cookies.click()
+    except:
+        pass
+
 # Abrir una página web
 url = 'https://www.amazon.es'
 driver.get(url)
 
-wait = WebDriverWait(driver, 20)  # Espera hasta 10 segundos
+wait = WebDriverWait(driver, 5)  # Espera hasta 10 segundos
+
+aceptar_cookies()
 
 try:
-    boton_aceptar_cookies = wait.until(EC.presence_of_element_located((By.ID, 'sp-cc-accept')))
-    boton_aceptar_cookies.click()
+    campo_buscador = wait.until(EC.presence_of_element_located((By.ID, 'twotabsearchtextbox')))
 except:
-    pass
+    campo_buscador = wait.until(EC.presence_of_element_located((By.ID, 'nav-bb-search')))
 
-campo_buscador = wait.until(EC.presence_of_element_located((By.ID, 'twotabsearchtextbox')))
-texto_a_buscar = "B0C3DM1RW2"
+#texto_a_buscar = "B0C3DM1RW2"
+texto_a_buscar = "laptop i7"
 campo_buscador.send_keys(texto_a_buscar)
 
-boton_buscar = driver.find_element(by = By.ID, value = 'nav-search-submit-button')
+try:
+    boton_buscar = driver.find_element(by = By.ID, value = 'nav-search-submit-button')
+except:
+    boton_buscar = driver.find_element(by = By.CLASS_NAME, value = 'nav-bb-button')
+
 boton_buscar.click()
 
-descripcion = wait.until(EC.presence_of_all_elements_located((By.XPATH, '//*[contains(@class, "a-size-small") and contains(@class, "a-color-base") and contains(@class, "a-text-normal")]')))
-precio = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'a-price-whole')))
+aceptar_cookies()
 
-desc_precio = list(zip(descripcion.text, precio.text))
-print(desc_precio)
+contenedor = wait.until(EC.presence_of_all_elements_located((By.XPATH, '//*[@class="sg-col-inner"]')))
+descripcion = []
+precio = []
+for contenido in contenedor:
+    try:
+        descripcion_iterable = contenido.find_element(by = By.XPATH, value = './/*[@class="a-size-base-plus a-color-base a-text-normal"]')
+        precio_iterable = contenido.find_element(by=By.XPATH, value='.//*[@class="a-price-whole"]')
+    except:
+        continue
+    descripcion.append(descripcion_iterable)
+    precio.append(precio_iterable)
+
+desc_y_precio = list(zip(descripcion, precio))
+print(len(desc_y_precio))
+
+#Se trasnforma la lista creada en el texto que contiene para trabajar con este
+desc_y_precio_texto = []
+for sublista in desc_y_precio:
+    lista_prov = []
+    lista_prov.append(sublista[0].text)
+    lista_prov.append(sublista[1].text)
+    desc_y_precio_texto.append(lista_prov)
+
+#Se eliminan duplicados, ya que por alguna razón, el primer resultado siempre se duplica (parece que tiene algo que ver
+#con la opción Amazon
+desc_y_precio = []
+for elemento in desc_y_precio_texto:
+    if elemento not in desc_y_precio:
+        desc_y_precio.append(elemento)
+
+for item in desc_y_precio:
+    print("\nDescripción: {}".format(item[0]))
+    print("Precio: {} €".format(item[1]))
 
 input("presiona enter para continuar...")
 # Cerrar el navegador
-#driver.quit()
+driver.quit()
